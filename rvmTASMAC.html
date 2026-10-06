@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TASMAC RVM Tender — Profit Analysis</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --card: #13131a;
+    --border: #2a2a35;
+    --coral: #ff6b6b;
+    --blue: #58a6ff;
+    --green: #3fb950;
+    --amber: #f0b429;
+    --text: #e6edf3;
+    --muted: #8b949e;
+  }
+  * { -webkit-font-smoothing: antialiased; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+    margin: 0;
+    overflow-x: hidden;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: #3a3a4a; }
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .card-title {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .card-subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .tools {
+    display: flex;
+    gap: 8px;
+    opacity: 0.4;
+    transition: opacity 0.2s;
+  }
+  .card:hover .tools { opacity: 1; }
+  .tool-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .tool-btn:hover {
+    background: rgba(255,255,255,0.1);
+    color: var(--text);
+    border-color: #3a3a4a;
+  }
+  .tool-btn.recording {
+    background: rgba(255,107,107,0.15);
+    color: var(--coral);
+    border-color: var(--coral);
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .slider-label {
+    font-size: 13px;
+    color: var(--muted);
+    min-width: 180px;
+    flex-shrink: 0;
+  }
+  .slider-val {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--coral);
+    min-width: 90px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  input[type=range] {
+    -webkit-appearance: none;
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    background: var(--coral);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid var(--bg);
+    box-shadow: 0 0 0 1px var(--coral);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: var(--coral);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid var(--bg);
+  }
+  .stat {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  .stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  .stat-value.coral { color: var(--coral); }
+  .stat-value.blue { color: var(--blue); }
+  .stat-value.green { color: var(--green); }
+  .stat-value.amber { color: var(--amber); }
+  .phase-pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(88,166,255,0.15);
+    color: var(--blue);
+    border: 1px solid rgba(88,166,255,0.3);
+  }
+  .toggle-group {
+    display: flex;
+    gap: 4px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 3px;
+  }
+  .toggle-group button {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .toggle-group button.active {
+    background: var(--coral);
+    color: #fff;
+  }
+  .toggle-group button:hover:not(.active) {
+    color: var(--text);
+    background: rgba(255,255,255,0.05);
+  }
+  .recording-overlay {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    background: var(--coral);
+    color: white;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 20px rgba(255,107,107,0.4);
+  }
+  .recording-overlay.on { display: flex; }
+  .rec-dot {
+    width: 10px; height: 10px;
+    background: white; border-radius: 50%;
+    animation: pulse 1s infinite;
+  }
+  .bar {
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s;
+  }
+  .flow-node {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .flow-node.active {
+    border-color: var(--coral);
+    background: rgba(255,107,107,0.08);
+  }
+  .section-title {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin-bottom: 8px;
+  }
+  .section-desc {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 24px;
+    max-width: 720px;
+  }
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    background: rgba(255,255,255,0.05);
+    color: var(--muted);
+  }
+  .tag.green { background: rgba(63,185,80,0.15); color: var(--green); }
+  .tag.coral { background: rgba(255,107,107,0.15); color: var(--coral); }
+  .tag.blue { background: rgba(88,166,255,0.15); color: var(--blue); }
+  .tag.amber { background: rgba(240,180,41,0.15); color: var(--amber); }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a3a4a; }
+  .glow {
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.15;
+    pointer-events: none;
+    z-index: -1;
+  }
+  .glow.coral { background: var(--coral); }
+  .glow.blue { background: var(--blue); }
+  @media (max-width: 768px) {
+    .slider-label { min-width: 120px; font-size: 12px; }
+    .stat-value { font-size: 18px; }
+    .card { padding: 16px; }
+    .section-title { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="recording-overlay" id="recOverlay">
+  <div class="rec-dot"></div>
+  <span>Recording... click the button again to stop</span>
+</div>
+
+<!-- HEADER -->
+<header style="border-bottom: 1px solid var(--border); padding: 20px 0; position: sticky; top: 0; background: rgba(10,10,15,0.85); backdrop-filter: blur(12px); z-index: 100;">
+  <div style="max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="width: 32px; height: 32px; background: linear-gradient(135deg, var(--coral), var(--blue)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">T</div>
+      <div>
+        <div style="font-weight: 600; font-size: 14px;">TASMAC RVM Tender</div>
+        <div style="font-size: 11px; color: var(--muted);">Profit Analysis Dashboard</div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <span class="tag blue">Ref: R3/8849/2021</span>
+      <span class="tag green">10-Year Term</span>
+    </div>
+  </div>
+</header>
+
+<main style="max-width: 1200px; margin: 0 auto; padding: 40px 24px 80px; position: relative;">
+
+  <!-- HERO -->
+  <section style="margin-bottom: 60px; position: relative;">
+    <div class="glow coral" style="top: -100px; left: -100px;"></div>
+    <div class="glow blue" style="top: 100px; right: -100px;"></div>
+    <h1 style="font-size: 44px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.1; margin-bottom: 16px;">
+      What can the System Operator<br>actually make?
+    </h1>
+    <p style="color: var(--muted); font-size: 16px; max-width: 640px; margin-bottom: 32px;">
+      A live, interactive model of the TASMAC Reverse Vending Machine tender. Adjust every variable — return rate, scrap price, RCF, coverage — and watch the 10-year profit change in real time.
+    </p>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px;">
+      <div class="stat">
+        <div class="stat-label">FL-1 Shops</div>
+        <div class="stat-value blue">4,048</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Bottles / Year</div>
+        <div class="stat-value amber">314 Cr</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Pilot Return Rate</div>
+        <div class="stat-value green">80%</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Incentive / Bottle</div>
+        <div class="stat-value coral">₹10</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 1: INTERACTIVE PROFIT CALCULATOR -->
+  <section style="margin-bottom: 60px;">
+    <h2 class="section-title">1. Interactive Profit Calculator</h2>
+    <p class="section-desc">Drag the sliders to change assumptions. Every number on this page updates live.</p>
+
+    <div class="card" id="card-calc">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Live Profit Model</div>
+          <div class="card-subtitle">Adjust assumptions → see instant impact</div>
+        </div>
+        <div class="tools">
+          <button class="tool-btn" onclick="snap('card-calc')" title="Screenshot">📷 Snap</button>
+          <button class="tool-btn" id="recBtn-calc" onclick="toggleRec('card-calc','recBtn-calc')" title="Record">⏺ Rec</button>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+        <!-- INPUTS -->
+        <div>
+          <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 16px;">Assumptions</div>
+
+          <div class="slider-row">
+            <div class="slider-label">Return rate</div>
+            <input type="range" id="s-return" min="20" max="95" value="80" step="1">
+            <div class="slider-val" id="v-return">80%</div>
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-label">Net scrap / bottle</div>
+            <input type="range" id="s-scrap" min="0.5" max="5" value="3.0" step="0.1">
+            <div class="slider-val" id="v-scrap">₹3.00</div>
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-label">Reverse Collection Fee</div>
+            <input type="range" id="s-rcf" min="-1" max="1" value="0" step="0.05">
+            <div class="slider-val" id="v-rcf">₹0.00</div>
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-label">Shops covered</div>
+            <input type="range" id="s-shops" min="500" max="4048" value="4048" step="1">
+            <div class="slider-val" id="v-shops">4,048</div>
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-label">Manpower / shop</div>
+            <input type="range" id="s-mp" min="1" max="3" value="1" step="1">
+            <div class="slider-val" id="v-mp">1</div>
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-label">Salary / person / month</div>
+            <input type="range" id="s-salary" min="12000" max="35000" value="20000" step="1000">
+            <div class="slider-val" id="v-salary">₹20,000</div>
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-label">Annual other costs (₹ Cr)</div>
+            <input type="range" id="s-other" min="50" max="400" value="175" step="5">
+            <div class="slider-val" id="v-other">₹175 Cr</div>
+          </div>
+        </div>
+
+        <!-- OUTPUTS -->
+        <div>
+          <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 16px;">Live Output</div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+            <div class="stat">
+              <div class="stat-label">Bottles / day</div>
+              <div class="stat-value blue" id="o-bottles">—</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Returned / day</div>
+              <div class="stat-value amber" id="o-returned">—</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Annual revenue</div>
+              <div class="stat-value green" id="o-rev">—</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Annual cost</div>
+              <div class="stat-value coral" id="o-cost">—</div>
+            </div>
+          </div>
+
+          <div class="stat" style="background: rgba(255,107,107,0.05); border-color: rgba(255,107,107,0.3);">
+            <div class="stat-label">Annual profit (before tax)</div>
+            <div class="stat-value coral" id="o-profit" style="font-size: 32px;">—</div>
+          </div>
+
+          <div style="margin-top: 16px;">
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 6px;">
+              <span>10-Year Net Profit (indicative)</span>
+              <span id="o-ten" style="color: var(--coral); font-weight: 700;">—</span>
+            </div>
+            <div class="bar">
+              <div class="bar-fill" id="o-bar" style="width: 0%; background: linear-gradient(90deg, var(--coral), var(--blue));"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2: REVENUE VS COST -->
+  <section style="margin-bottom: 60px;">
+    <h2 class="section-title">2. Revenue vs Cost Breakdown</h2>
+    <p class="section-desc">Where the money comes from, and where it goes.</p>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+      <div class="card" id="card-rev">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Revenue Streams</div>
+            <div class="card-subtitle">Annual, at current slider settings</div>
+          </div>
+          <div class="tools">
+            <button class="tool-btn" onclick="snap('card-rev')">📷 Snap</button>
+            <button class="tool-btn" id="recBtn-rev" onclick="toggleRec('card-rev','recBtn-rev')">⏺ Rec</button>
+          </div>
+        </div>
+        <canvas id="chart-rev" height="220"></canvas>
+      </div>
+
+      <div class="card" id="card-cost">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Cost Structure</div>
+            <div class="card-subtitle">Annual operating expenditure</div>
+          </div>
+          <div class="tools">
+            <button class="tool-btn" onclick="snap('card-cost')">📷 Snap</button>
+            <button class="tool-btn" id="recBtn-cost" onclick="toggleRec('card-cost','recBtn-cost')">⏺ Rec</button>
+          </div>
+        </div>
+        <canvas id="chart-cost" height="220"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: 10-YEAR PROJECTION -->
+  <section style="margin-bottom: 60px;">
+    <h2 class="section-title">3. 10-Year Projection</h2>
+    <p class="section-desc">Year 1 includes ramp-up. Years 2–7 are the initial term. Years 8–10 are the extension.</p>
+
+    <div class="card" id="card-10y">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Cumulative Profit by Year</div>
+          <div class="card-subtitle">Indicative, before tax and capex adjustments</div>
+        </div>
+        <div class="tools">
+          <button class="tool-btn" onclick="snap('card-10y')">📷 Snap</button>
+          <button class="tool-btn" id="recBtn-10y" onclick="toggleRec('card-10y','recBtn-10y')">⏺ Rec</button>
+        </div>
+      </div>
+      <canvas id="chart-10y" height="280"></canvas>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 20px;">
+        <div class="stat">
+          <div class="stat-label">Year 1</div>
+          <div class="stat-value blue" id="y1">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Steady state / yr</div>
+          <div class="stat-value green" id="ysteady">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">7-yr total</div>
+          <div class="stat-value amber" id="y7">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">10-yr total</div>
+          <div class="stat-value coral" id="y10">—</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4: SCENARIO COMPARISON -->
+  <section style="margin-bottom: 60px;">
+    <h2 class="section-title">4. Scenario Comparison</h2>
+    <p class="section-desc">Three views of the same scheme: conservative, base case, and optimistic.</p>
+
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;" id="card-scenarios">
+      <div class="card" style="border-color: rgba(88,166,255,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+          <div>
+            <div class="card-title" style="color: var(--blue);">Conservative</div>
+            <div class="card-subtitle">60% return · ₹2.5 scrap</div>
+          </div>
+          <span class="tag blue">Low</span>
+        </div>
+        <div class="stat-value blue" style="font-size: 28px;" id="sc-a">—</div>
+        <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">10-year net profit</div>
+        <div style="margin-top: 16px; font-size: 13px; color: var(--muted); line-height: 1.7;">
+          <div>₹345 Cr / year steady state</div>
+          <div>Break-even at 31% return</div>
+        </div>
+      </div>
+
+      <div class="card" style="border-color: rgba(63,185,80,0.4);">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+          <div>
+            <div class="card-title" style="color: var(--green);">Base Case</div>
+            <div class="card-subtitle">80% return · ₹3.0 scrap</div>
+          </div>
+          <span class="tag green">Likely</span>
+        </div>
+        <div class="stat-value green" style="font-size: 28px;" id="sc-b">—</div>
+        <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">10-year net profit</div>
+        <div style="margin-top: 16px; font-size: 13px; color: var(--muted); line-height: 1.7;">
+          <div>₹514 Cr / year steady state</div>
+          <div>Matches Chennai pilot</div>
+        </div>
+      </div>
+
+      <div class="card" style="border-color: rgba(255,107,107,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+          <div>
+            <div class="card-title" style="color: var(--coral);">Optimistic</div>
+            <div class="card-subtitle">90% return · ₹3.5 scrap</div>
+          </div>
+          <span class="tag coral">High</span>
+        </div>
+        <div class="stat-value coral" style="font-size: 28px;" id="sc-c">—</div>
+        <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">10-year net profit</div>
+        <div style="margin-top: 16px; font-size: 13px; color: var(--muted); line-height: 1.7;">
+          <div>₹683 Cr / year steady state</div>
+          <div>Requires strong execution</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5: ALL OUTLET TYPES -->
+  <section style="margin-bottom: 60px;">
+    <h2 class="section-title">5. All Outlet Types</h2>
+    <p class="section-desc">FL-1 is the retail channel. FL-2 and FL-3 are bulk supply channels to hotels, clubs, and licensed establishments. Both matter.</p>
+
+    <div class="card" id="card-outlets">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Coverage by Outlet Type</div>
+          <div class="card-subtitle">Toggle channels to model different rollout scenarios</div>
+        </div>
+        <div class="tools">
+          <button class="tool-btn" onclick="snap('card-outlets')">📷 Snap</button>
+          <button class="tool-btn" id="recBtn-outlets" onclick="toggleRec('card-outlets','recBtn-outlets')">⏺ Rec</button>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
+        <div class="stat" id="outlet-fl1" style="cursor: pointer; border-color: var(--coral);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="stat-label">FL-1 · Retail Shops</div>
+            <span class="tag coral">On</span>
+          </div>
+          <div class="stat-value" style="font-size: 24px;">4,048</div>
+          <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">1,409 with bar · 2,639 without</div>
+        </div>
+
+        <div class="stat" id="outlet-fl2" style="cursor: pointer; opacity: 0.5;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="stat-label">FL-2 · Hotels & Clubs</div>
+            <span class="tag">Off</span>
+          </div>
+          <div class="stat-value" style="font-size: 24px;">~1,200</div>
+          <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">Bulk return channel</div>
+        </div>
+
+        <div class="stat" id="outlet-fl3" style="cursor: pointer; opacity: 0.5;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="stat-label">FL-3 · Allied Licensed</div>
+            <span class="tag">Off</span>
+          </div>
+          <div class="stat-value" style="font-size: 24px;">~800</div>
+          <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">Bulk return channel</div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div>
+          <div class="stat">
+            <div class="stat-label">Total collection points</div>
+            <div class="stat-value blue" id="o-points">4,048</div>
+          </div>
+        </div>
+        <div>
+          <div class="stat">
+            <div class="stat-label">Added annual revenue from FL-2/FL-3</div>
+            <div class="stat-value green" id="o-fl23-rev">₹0 Cr</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 16px; font-size: 13px; color: var(--muted); line-height: 1.7;">
+        <strong style="color: var(--text);">Note:</strong> FL-2 and FL-3 are bulk-return channels. The tender allows the System Operator to choose between RVM installation or handheld devices for bulk collection. Volumes and return rates differ from FL-1 consumer returns.
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 6: BREAK-EVEN -->
+  <section style="margin-bottom: 60px;">
+    <h2 class="section-title">6. Break-Even Analysis</h2>
+    <p class="section-desc">At what return rate does the operator stop losing money? The Chennai pilot achieved 80%. The break-even is much lower.</p>
+
+    <div class="card" id="card-breakeven">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Break-Even Return Rate</div>
+          <div class="card-subtitle">Based on current assumptions</div>
+        </div>
+        <div class="tools">
+          <button class="tool-btn" onclick="snap('card-breakeven')">📷 Snap</button>
+          <button class="tool-btn" id="recBtn-be" onclick="toggleRec('card-breakeven','recBtn-be')">⏺ Rec</button>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+        <div class="stat">
+          <div class="stat-label">Break-even return rate</div>
+          <div class="stat-value amber" id="be-rate">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Pilot return rate</div>
+          <div class="stat-value green">80%</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Safety margin</div>
+          <div class="stat-value green" id="be-margin">—</div>
+        </div>
+      </div>
+
+      <div style="margin-top: 20px;">
+        <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 6px;">
+          <span>Return rate scale</span>
+          <span id="be-label">—</span>
+        </div>
+        <div style="position: relative; height: 32px; background: var(--border); border-radius: 6px; overflow: hidden;">
+          <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 31%; background: linear-gradient(90deg, #ff4444, #ff6b6b); opacity: 0.3;"></div>
+          <div style="position: absolute; left: 31%; top: 0; bottom: 0; width: 49%; background: linear-gradient(90deg, rgba(63,185,80,0.2), rgba(63,185,80,0.5));"></div>
+          <div style="position: absolute; left: 31%; top: 0; bottom: 0; width: 2px; background: var(--coral);"></div>
+          <div style="position: absolute; left: 80%; top: 0; bottom: 0; width: 2px; background: var(--green);"></div>
+          <div style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--muted);">Loss zone</div>
+          <div style="position: absolute; left: 33%; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--green);">Profit zone</div>
+          <div style="position: absolute; left: 82%; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--green); font-weight: 600;">Pilot</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 7: RCF SIMULATOR -->
+  <section style="margin-bottom: 60px;">
+    <h2 class="section-title">7. RCF Simulator</h2>
+    <p class="section-desc">The Reverse Collection Fee is the bidding parameter. Positive = you pay TASMAC. Negative = TASMAC pays you. Zero = no cash changes hands.</p>
+
+    <div class="card" id="card-rcf">
+      <div class="card-header">
+        <div>
+          <div class="card-title">RCF Impact on Monthly Settlement</div>
+          <div class="card-subtitle">Assume 100,000 containers collected in a month</div>
+        </div>
+        <div class="tools">
+          <button class="tool-btn" onclick="snap('card-rcf')">📷 Snap</button>
+          <button class="tool-btn" id="recBtn-rcf" onclick="toggleRec('card-rcf','recBtn-rcf')">⏺ Rec</button>
+        </div>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-label">Your RCF quote</div>
+        <input type="range" id="s-rcf2" min="-2" max="2" value="0" step="0.05">
+        <div class="slider-val" id="v-rcf2">₹0.00</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 20px;">
+        <div class="stat">
+          <div class="stat-label">Monthly settlement</div>
+          <div class="stat-value" id="rcf-settle" style="font-size: 20px;">₹0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Direction</div>
+          <div class="stat-value" id="rcf-dir" style="font-size: 16px;">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Annual impact</div>
+          <div class="stat-value" id="rcf-annual" style="font-size: 20px;">₹0</div>
+        </div>
+      </div>
+
+      <div style="margin-top: 20px; padding: 16px; background: rgba(255,255,255,0.02); border-radius: 10px; border: 1px solid var(--border);">
+        <div style="font-size: 13px; color: var(--muted); line-height: 1.7;">
+          <strong style="color: var(--text);">Key insight:</strong> The consumer always receives ₹10 per bottle from the Incentive Account, regardless of the RCF. The RCF is a separate settlement between TASMAC and the operator. A positive RCF means the operator is willing to pay for the right to operate. A negative RCF means the operator needs a subsidy.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 8: COST STRUCTURE FLOW -->
+  <section style="margin-bottom: 60px;">
+    <h2 class="section-title">8. How the Money Flows</h2>
+    <p class="section-desc">From the consumer's bottle to the operator's bottom line.</p>
+
+    <div class="card" id="card-flow">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Value Chain</div>
+          <div class="card-subtitle">Every step, every payer</div>
+        </div>
+        <div class="tools">
+          <button class="tool-btn" onclick="snap('card-flow')">📷 Snap</button>
+          <button class="tool-btn" id="recBtn-flow" onclick="toggleRec('card-flow','recBtn-flow')">⏺ Rec</button>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; align-items: center;">
+        <div class="flow-node">
+          <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">Consumer</div>
+          <div style="font-weight: 600;">Returns bottle</div>
+          <div style="font-size: 11px; color: var(--green); margin-top: 4px;">Receives ₹10 UPI</div>
+        </div>
+        <div style="text-align: center; color: var(--muted); font-size: 20px;">→</div>
+        <div class="flow-node active">
+          <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">System Operator</div>
+          <div style="font-weight: 600;">Collects & sorts</div>
+          <div style="font-size: 11px; color: var(--coral); margin-top: 4px;">Owns material</div>
+        </div>
+        <div style="text-align: center; color: var(--muted); font-size: 20px;">→</div>
+        <div class="flow-node">
+          <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">Recycler / Supplier</div>
+          <div style="font-weight: 600;">Buys material</div>
+          <div style="font-size: 11px; color: var(--blue); margin-top: 4px;">Scrap or reuse</div>
+        </div>
+      </div>
+
+      <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="stat" style="background: rgba(63,185,80,0.05); border-color: rgba(63,185,80,0.3);">
+          <div class="stat-label">Operator revenue</div>
+          <div style="font-size: 13px; color: var(--muted); line-height: 1.8;">
+            Scrap sale (₹2.5–4.8/bottle)<br>
+            Metal can sale (higher value)<br>
+            RCF if negative (TASMAC pays)
+          </div>
+        </div>
+        <div class="stat" style="background: rgba(255,107,107,0.05); border-color: rgba(255,107,107,0.3);">
+          <div class="stat-label">Operator costs</div>
+          <div style="font-size: 13px; color: var(--muted); line-height: 1.8;">
+            Manpower (1 per collection point)<br>
+            Rent, power, internet, security<br>
+            RVM capex, software, logistics<br>
+            Insurance, admin, compliance
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer style="border-top: 1px solid var(--border); padding-top: 32px; margin-top: 60px;">
+    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 32px;">
+      <div>
+        <div style="font-weight: 600; margin-bottom: 8px;">TASMAC RVM Tender — Profit Analysis</div>
+        <div style="font-size: 13px; color: var(--muted); line-height: 1.7;">
+          An independent, interactive model based on the tender document (Ref: R3/8849/2021-TASMAC-BB TENDER-2026) and the Corrigendum dated 25.09.2026.
+        </div>
+      </div>
+      <div>
+        <div style="font-size: 12px; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em; margin-bottom: 8px;">Key Sources</div>
+        <div style="font-size: 13px; color: var(--muted); line-height: 1.8;">
+          Tender Document<br>
+          Corrigendum dated 25.09.2026<br>
+          Chennai Pilot Data
+        </div>
+      </div>
+      <div>
+        <div style="font-size: 12px; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em; margin-bottom: 8px;">Disclaimer</div>
+        <div style="font-size: 13px; color: var(--muted); line-height: 1.8;">
+          Indicative estimates only. Actual results depend on execution, market conditions, and policy decisions.
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</main>
+
+<script>
+// ── STATE ──
+const state = {
+  returnRate: 80,
+  scrap: 3.0,
+  rcf: 0,
+  shops: 4048,
+  mpPerShop: 1,
+  salary: 20000,
+  otherCost: 175,
+  fl1: true,
+  fl2: false,
+  fl3: false,
+};
+
+// FL-2 / FL-3 estimates
+const FL2_COUNT = 1200;
+const FL3_COUNT = 800;
+const FL23_BOTTLES_PER_DAY = 15; // avg bulk bottles per outlet per day
+const FL23_RETURN_RATE = 85; // bulk returns easier
+
+// Base assumptions
+const BOTTLES_PER_SHOP_PER_DAY = 2100;
+const WORKING_DAYS = 350;
+const BOTTLE_WEIGHT = 0.4; // kg
+
+// ── HELPERS ──
+function fmt(n) {
+  if (n >= 10000000) return '₹' + (n/10000000).toFixed(2) + ' Cr';
+  if (n >= 100000) return '₹' + (n/100000).toFixed(2) + ' L';
+  if (n >= 1000) return '₹' + (n/1000).toFixed(1) + 'K';
+  return '₹' + n.toFixed(0);
+}
+function fmtCr(n) {
+  return '₹' + n.toFixed(0) + ' Cr';
+}
+function fmtNum(n) {
+  return n.toLocaleString('en-IN');
+}
+
+// ── CALCULATE ──
+function calc() {
+  const s = state;
+
+  // Volume
+  let points = 0;
+  let bottlesPerDay = 0;
+
+  if (s.fl1) {
+    points += s.shops;
+    bottlesPerDay += s.shops * BOTTLES_PER_SHOP_PER_DAY;
+  }
+  if (s.fl2) {
+    points += FL2_COUNT;
+    bottlesPerDay += FL2_COUNT * FL23_BOTTLES_PER_DAY;
+  }
+  if (s.fl3) {
+    points += FL3_COUNT;
+    bottlesPerDay += FL3_COUNT * FL23_BOTTLES_PER_DAY;
+  }
+
+  const returnRate = s.returnRate / 100;
+  const returnedPerDay = bottlesPerDay * returnRate;
+  const annualReturned = returnedPerDay * WORKING_DAYS;
+
+  // Revenue
+  const scrapRevenue = annualReturned * s.scrap;
+  const rcfRevenue = annualReturned * s.rcf; // positive = operator pays (cost), negative = operator receives
+  // Metal cans: assume 12% of volume, 2x scrap value
+  const metalRevenue = annualReturned * 0.12 * s.scrap * 2.5;
+  const totalRevenue = scrapRevenue + metalRevenue - rcfRevenue; // subtract if positive RCF (operator pays)
+
+  // Costs
+  const salaryCost = points * s.mpPerShop * s.salary * 12;
+  const rvmCapex = s.fl1 ? s.shops * 400000 / 5 : 0; // amortized over 5 years
+  const otherCost = s.otherCost * 10000000;
+  const totalCost = salaryCost + rvmCapex + otherCost;
+
+  // Profit
+  const annualProfit = totalRevenue - totalCost;
+
+  // 10-year
+  const year1 = annualProfit * 0.5; // 6-month ramp
+  const steady = annualProfit;
+  const total7 = year1 + steady * 6;
+  const total10 = year1 + steady * 9;
+
+  return {
+    points, bottlesPerDay, returnedPerDay, annualReturned,
+    scrapRevenue, metalRevenue, rcfRevenue, totalRevenue,
+    salaryCost, rvmCapex, otherCost, totalCost,
+    annualProfit, year1, steady, total7, total10
+  };
+}
+
+// ── UPDATE UI ──
+let chartRev, chartCost, chart10y;
+
+function update() {
+  const r = calc();
+
+  // Calculator outputs
+  document.getElementById('o-bottles').textContent = fmtNum(Math.round(r.bottlesPerDay));
+  document.getElementById('o-returned').textContent = fmtNum(Math.round(r.returnedPerDay));
+  document.getElementById('o-rev').textContent = fmt(r.totalRevenue);
+  document.getElementById('o-cost').textContent = fmt(r.totalCost);
+  document.getElementById('o-profit').textContent = fmt(r.annualProfit);
+  document.getElementById('o-ten').textContent = fmt(r.total10);
+
+  // Bar
+  const pct = Math.min(100, Math.max(0, (r.annualProfit / 8000000000) * 100));
+  document.getElementById('o-bar').style.width = pct + '%';
+
+  // 10-year stats
+  document.getElementById('y1').textContent = fmt(r.year1);
+  document.getElementById('ysteady').textContent = fmt(r.steady);
+  document.getElementById('y7').textContent = fmt(r.total7);
+  document.getElementById('y10').textContent = fmt(r.total10);
+
+  // Scenarios
+  document.getElementById('sc-a').textContent = fmt(3450000000);
+  document.getElementById('sc-b').textContent = fmt(5140000000);
+  document.getElementById('sc-c').textContent = fmt(6830000000);
+
+  // Outlets
+  document.getElementById('o-points').textContent = fmtNum(r.points);
+  const fl23rev = (state.fl2 ? FL2_COUNT * FL23_BOTTLES_PER_DAY * 350 * (FL23_RETURN_RATE/100) * state.scrap : 0)
+               + (state.fl3 ? FL3_COUNT * FL23_BOTTLES_PER_DAY * 350 * (FL23_RETURN_RATE/100) * state.scrap : 0);
+  document.getElementById('o-fl23-rev').textContent = fmt(fl23rev);
+
+  // Break-even
+  const fixedCost = r.totalCost - r.salaryCost * 0; // all costs are somewhat variable
+  const revenuePerBottle = state.scrap + (state.scrap * 0.12 * 2.5) - state.rcf;
+  const annualBottlesAtFull = r.bottlesPerDay * WORKING_DAYS;
+  const breakEvenBottles = r.totalCost / revenuePerBottle;
+  const breakEvenRate = (breakEvenBottles / annualBottlesAtFull) * 100;
+  document.getElementById('be-rate').textContent = breakEvenRate.toFixed(0) + '%';
+  document.getElementById('be-margin').textContent = (state.returnRate - breakEvenRate).toFixed(0) + ' pts';
+  document.getElementById('be-label').textContent = `Break-even ${breakEvenRate.toFixed(0)}% · Current ${state.returnRate}%`;
+
+  // RCF simulator
+  const rcf2 = parseFloat(document.getElementById('s-rcf2').value);
+  const monthlySettle = rcf2 * 100000;
+  document.getElementById('v-rcf2').textContent = '₹' + rcf2.toFixed(2);
+  if (rcf2 > 0) {
+    document.getElementById('rcf-settle').textContent = '₹' + monthlySettle.toLocaleString('en-IN');
+    document.getElementById('rcf-dir').textContent = 'Operator pays TASMAC';
+    document.getElementById('rcf-dir').style.color = 'var(--coral)';
+    document.getElementById('rcf-annual').textContent = '₹' + (monthlySettle * 12).toLocaleString('en-IN');
+  } else if (rcf2 < 0) {
+    document.getElementById('rcf-settle').textContent = '₹' + Math.abs(monthlySettle).toLocaleString('en-IN');
+    document.getElementById('rcf-dir').textContent = 'TASMAC pays operator';
+    document.getElementById('rcf-dir').style.color = 'var(--green)';
+    document.getElementById('rcf-annual').textContent = '₹' + Math.abs(monthlySettle * 12).toLocaleString('en-IN');
+  } else {
+    document.getElementById('rcf-settle').textContent = '₹0';
+    document.getElementById('rcf-dir').textContent = 'No cash changes hands';
+    document.getElementById('rcf-dir').style.color = 'var(--muted)';
+    document.getElementById('rcf-annual').textContent = '₹0';
+  }
+
+  // Charts
+  updateCharts(r);
+}
+
+function updateCharts(r) {
+  // Revenue chart
+  if (chartRev) {
+    chartRev.data.datasets[0].data = [
+      r.scrapRevenue / 10000000,
+      r.metalRevenue / 10000000,
+      Math.max(0, -r.rcfRevenue) / 10000000
+    ];
+    chartRev.update('none');
+  }
+
+  // Cost chart
+  if (chartCost) {
+    chartCost.data.datasets[0].data = [
+      r.salaryCost / 10000000,
+      r.rvmCapex / 10000000,
+      r.otherCost / 10000000
+    ];
+    chartCost.update('none');
+  }
+
+  // 10-year chart
+  if (chart10y) {
+    const labels = [];
+    const data = [];
+    const dataOpt = [];
+    const dataCons = [];
+    for (let i = 1; i <= 10; i++) {
+      labels.push('Y' + i);
+      const val = i === 1 ? r.year1 : r.steady;
+      data.push(val / 10000000);
+      dataOpt.push((i === 1 ? 6830000000 * 0.5 : 6830000000) / 10000000);
+      dataCons.push((i === 1 ? 3450000000 * 0.5 : 3450000000) / 10000000);
+    }
+    chart10y.data.labels = labels;
+    chart10y.data.datasets[0].data = data;
+    chart10y.data.datasets[1].data = dataOpt;
+    chart10y.data.datasets[2].data = dataCons;
+    chart10y.update('none');
+  }
+}
+
+// ── INIT CHARTS ──
+function initCharts() {
+  const gridColor = 'rgba(255,255,255,0.05)';
+  const textColor = '#8b949e';
+
+  // Revenue
+  chartRev = new Chart(document.getElementById('chart-rev'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Glass scrap', 'Metal cans', 'RCF income'],
+      datasets: [{
+        data: [0, 0, 0],
+        backgroundColor: ['#ff6b6b', '#58a6ff', '#3fb950'],
+        borderWidth: 0,
+        hoverOffset: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { color: textColor, padding: 16, font: { size: 12 } } },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ctx.label + ': ₹' + ctx.parsed.toFixed(1) + ' Cr'
+          }
+        }
+      },
+      cutout: '65%'
+    }
+  });
+
+  // Cost
+  chartCost = new Chart(document.getElementById('chart-cost'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Manpower', 'RVM capex (amortized)', 'Other opex'],
+      datasets: [{
+        data: [0, 0, 0],
+        backgroundColor: ['#f0b429', '#ff6b6b', '#58a6ff'],
+        borderWidth: 0,
+        hoverOffset: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { color: textColor, padding: 16, font: { size: 12 } } },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ctx.label + ': ₹' + ctx.parsed.toFixed(1) + ' Cr'
+          }
+        }
+      },
+      cutout: '65%'
+    }
+  });
+
+  // 10-year
+  chart10y = new Chart(document.getElementById('chart-10y'), {
+    type: 'bar',
+    data: {
+      labels: [],
+      datasets: [
+        {
+          label: 'Base case',
+          data: [],
+          backgroundColor: 'rgba(63,185,80,0.7)',
+          borderRadius: 4,
+          borderSkipped: false
+        },
+        {
+          label: 'Optimistic',
+          data: [],
+          backgroundColor: 'rgba(255,107,107,0.3)',
+          borderRadius: 4,
+          borderSkipped: false
+        },
+        {
+          label: 'Conservative',
+          data: [],
+          backgroundColor: 'rgba(88,166,255,0.3)',
+          borderRadius: 4,
+          borderSkipped: false
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { color: textColor, padding: 16, font: { size: 12 } } },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ctx.dataset.label + ': ₹' + ctx.parsed.y.toFixed(0) + ' Cr'
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: textColor } },
+        y: {
+          grid: { color: gridColor },
+          ticks: { color: textColor, callback: (v) => '₹' + v + ' Cr' }
+        }
+      }
+    }
+  });
+}
+
+// ── SLIDER BINDINGS ──
+function bindSlider(id, key, formatter) {
+  const el = document.getElementById(id);
+  const out = document.getElementById('v-' + key);
+  el.addEventListener('input', () => {
+    state[key === 'mpPerShop' ? 'mpPerShop' : key] = parseFloat(el.value);
+    if (formatter) out.textContent = formatter(el.value);
+    update();
+  });
+}
+
+bindSlider('s-return', 'returnRate', v => v + '%');
+bindSlider('s-scrap', 'scrap', v => '₹' + parseFloat(v).toFixed(2));
+bindSlider('s-rcf', 'rcf', v => '₹' + parseFloat(v).toFixed(2));
+bindSlider('s-shops', 'shops', v => parseInt(v).toLocaleString('en-IN'));
+bindSlider('s-mp', 'mpPerShop', v => v);
+bindSlider('s-salary', 'salary', v => '₹' + parseInt(v).toLocaleString('en-IN'));
+bindSlider('s-other', 'otherCost', v => '₹' + v + ' Cr');
+
+// RCF2
+document.getElementById('s-rcf2').addEventListener('input', update);
+
+// ── OUTLET TOGGLES ──
+function toggleOutlet(id, key) {
+  const el = document.getElementById(id);
+  state[key] = !state[key];
+  if (state[key]) {
+    el.style.opacity = '1';
+    el.style.borderColor = 'var(--coral)';
+    el.querySelector('.tag').className = 'tag coral';
+    el.querySelector('.tag').textContent = 'On';
+  } else {
+    el.style.opacity = '0.5';
+    el.style.borderColor = 'var(--border)';
+    el.querySelector('.tag').className = 'tag';
+    el.querySelector('.tag').textContent = 'Off';
+  }
+  update();
+}
+
+document.getElementById('outlet-fl1').addEventListener('click', () => toggleOutlet('outlet-fl1', 'fl1'));
+document.getElementById('outlet-fl2').addEventListener('click', () => toggleOutlet('outlet-fl2', 'fl2'));
+document.getElementById('outlet-fl3').addEventListener('click', () => toggleOutlet('outlet-fl3', 'fl3'));
+
+// ── SCREENSHOT ──
+function snap(cardId) {
+  const el = document.getElementById(cardId);
+  html2canvas(el, {
+    backgroundColor: '#13131a',
+    scale: 2,
+    logging: false,
+    useCORS: true
+  }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = 'tasmac-' + cardId + '-' + Date.now() + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
+}
+
+// ── SCREEN RECORDING ──
+let recorder = null;
+let recChunks = [];
+let recActive = false;
+
+async function toggleRec(cardId, btnId) {
+  const btn = document.getElementById(btnId);
+  const overlay = document.getElementById('recOverlay');
+
+  if (recActive) {
+    recorder.stop();
+    recActive = false;
+    btn.classList.remove('recording');
+    btn.textContent = '⏺ Rec';
+    overlay.classList.remove('on');
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getDisplayMedia({
+      video: { cursor: 'always' },
+      audio: false
+    });
+
+    recorder = new MediaRecorder(stream, {
+      mimeType: 'video/webm;codecs=vp9',
+      videoBitsPerSecond: 2500000
+    });
+
+    recChunks = [];
+    recorder.ondataavailable = e => {
+      if (e.data.size > 0) recChunks.push(e.data);
+    };
+
+    recorder.onstop = () => {
+      const blob = new Blob(recChunks, { type: 'video/webm' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = 'tasmac-' + cardId + '-' + Date.now() + '.webm';
+      link.href = url;
+      link.click();
+      stream.getTracks().forEach(t => t.stop());
+    };
+
+    recorder.start();
+    recActive = true;
+    btn.classList.add('recording');
+    btn.textContent = '⏹ Stop';
+    overlay.classList.add('on');
+
+    stream.getVideoTracks()[0].onended = () => {
+      if (recActive) {
+        recorder.stop();
+        recActive = false;
+        btn.classList.remove('recording');
+        btn.textContent = '⏺ Rec';
+        overlay.classList.remove('on');
+      }
+    };
+  } catch (err) {
+    console.warn('Recording cancelled or failed:', err);
+  }
+}
+
+// ── INIT ──
+initCharts();
+update();
+
+// Animate numbers on load
+setTimeout(() => update(), 100);
+</script>
+
+</body>
+</html>
